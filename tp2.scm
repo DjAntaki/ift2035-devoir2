@@ -23,7 +23,8 @@
 (define node-definition caddr)
 (define node-lchild node car)
 (define node-rchild node cadddr)
-(define (node-create key definition lchild rchild) (list key definition lchild rchild))
+(define (node-create key definition lchild rchild) (list lchild key definition rchild))
+(define (node-reconstruct x lchild rchild) (list lchild (node-key x) (node-definition x) rchild))
 
 (define node-insert 
         (lambda (root node) 
@@ -38,15 +39,46 @@
 
 (define node-splay
         (lambda (root node)
-                (.........)))
+                ()))
                 
-(define zig 
+;
+;Opération zig. p etait root -> c est root
+; quand x est le left child de p et p est root
+; (((A) X (B)) P (C)) -> ((A) X ((B) P (C)))
+(define zig-left
     (lambda (p x) 
-            ()))
+            (node-reconstruct x (node-lchild x) (node-reconstruct p (node-rchild x) (node-rchild p)))))
+;Opération zig. p etait root -> c est root
+; quand x est le right child de p et p est root
+; ((C) P ((B) X (A))) -> (((C) P (B)) X (A))
+(define zig-right
+    (lambda (p x) 
+            (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x))(node-rchild x) )))
+; x is right child of p is right child of g
+(define zig-zig-right
+        (lambda (g p x)
+            (node-reconstruct x (node-reconstruct p (node-reconstruct g (node-lchild g) 
+                                                                        (node-lchild p)) 
+                                                    (node-lchild x))
+                                (node-rchild x))))   
 
-(define zig-zig
-        (lambda (g p x)))
+; x is leftchild of p is leftchild of g
+(define zig-zig-left
+        (lambda (g p x)
+            (node-reconstruct x (node-lchild x) 
+                                (node-reconstruct p (node-rchild x)  
+                                                    (node-reconstruc g (node-rchild p)
+                                                                       (node-rchild g))))))
+#|                                
+(define zig-zag-left
+        (lambda (g p x)
+                (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x)))))        
 
+(define zig-zag-right
+        (lambda (g p x)
+                (node-reconstruct x ())))                
+                
+  |#              
 (define (node-find root key) 
  ((if (null? root) 
        (let cmp -1)
