@@ -115,7 +115,11 @@
          (f (car lst)
             (foldr f base (cdr lst))))))
 
-
+(define (gerer-concat str dict)
+		(let ((x (string-split (caddr str) '+)))
+			(display x);;;(make-concatdefinition x dict)
+		)
+)
 ;;;
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -129,37 +133,41 @@
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
   
+;;; TESTÉ
+;;;(eval-expr '(a b c =)) => (- (a b c))
+;;;(eval-expr '(a b c)) => (a b c)
+;;;(eval-expr '(a b c = d e f)) => (= (a b c) (d e f))
 (define (eval-expr expr) 
         (if (member '= expr) 
-			(let (expr (string-split expr '=))
-				(if (null? (cdar expr))
-					(cons '- (car expr));;;retrait du mot expr
+			(let ((expr (string-split expr '=)))
+				(if (null? (cadr expr))
+					(cons '- (list (car expr)));;;retrait du mot expr
 					(append (list '= (car expr))
 							(cdr expr));;;ajouter le mot.  REMARQUE: S'il y a plusieurs '= dans expr, c'est bizarre 
 				)
 			)
 		expr;;;recherche du mot expr    
 		)
-)     
+)    
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
    ;;;evaluer l'expression
-   (let (result (eval-expr expr))
+		(let ((result (eval-expr expr)))
 			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut delete le mot key
-				  (...);;;appel à node-delete avec (cdr result)?
+				  (display result);;;appel à node-delete avec (cdr result)?
 				 )
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
-					(if (member '+ (cdr result))
-						(...);;;concaténation
-						(...);;;ajout normal
+					(if (member '+ (caddr result))
+						(gerer-concat result dict);;;(printligneet1 result);;;concaténation
+						result;;;ajout normal
 					)
 				 )
 				 (else;;;result est de la forme (key) et il faut rechercher le mot key
-				 (node-find dict result)
+				 (...);;;appeler node-find
 				 )
 			)
-   )
+		)
    ;;;appliquer le traitement approprié
   
   ;;;sortir la réponse appropriée
