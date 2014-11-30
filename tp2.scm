@@ -19,6 +19,15 @@
 ;;; "go" qui se charge de cela.
 ;;;----------------------------------------------------------------------------
 
+(define assert (lambda (expr . message)
+                 (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
+                     (display color)
+                     (display (if expr "pass" "fail"))
+                     (display (if (not (null? message)) (string-append " " (car message)) ""))
+                     (display "\n")
+                     (display reset))))
+
+
 (define node-key cadr)
 (define node-definition caddr)
 (define node-lchild car)
