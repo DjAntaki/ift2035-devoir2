@@ -35,15 +35,34 @@
 (define (node-create key definition lchild rchild) (list lchild key definition rchild))
 (define (node-reconstruct x lchild rchild) (list lchild (node-key x) (node-definition x) rchild))
 
-;(define node-insert 
-;        (lambda (root node) 
-;                (..........)))
-
-;(define node-remove ....)
-                
-;(define (node-delete root node)
-;	 ((let (node node-find(key)))
-;     ...........))
+(define node-insert 
+        (lambda (root node) 
+                 (let ((cmp (if (null? root) #f (compare (node-key node) (node-key root)))))
+                    (cond 
+                        ((equal? cmp 'youfoundme) root )
+                        ((equal? cmp 'right) (if (null? (node-rchild root))
+                                                 (node-reconstruct root (node-lchild root) node) 
+                                                 (node-reconstruct root (node-lchild root) (node-insert (node-rchild root) node))))
+                        ((equal? cmp 'left)  (if (null? (node-lchild root))
+                                                 (node-reconstruct root node (node-rchild root)) 
+                                                 (node-reconstruct root (node-insert (node-lchild root) node) (node-rchild root))))
+                        (else #f)))))
+                    
+(define node-remove
+        (lambda (root key) 
+                 (let ((cmp (if (null? root) #f (compare key (node-key root)))))
+                    (cond 
+                        ((equal? cmp 'youfoundme) (if (null? (node-lchild root))
+                                                      (node-rchild root)
+                                                      (node-lchild root))
+                        ((equal? cmp 'right) (if (null? (node-rchild root))
+                                                 root 
+                                                 (node-reconstruct root (node-lchild root) (node-remove (node-rchild root) key))))
+                        ((equal? cmp 'left)  (if (null? (node-lchild root))
+                                                 root
+                                                 (node-reconstruct root (node-remove (node-lchild root) node) (node-rchild root))))
+                        (else #f))))
+        )
 
 ; Évalue la profondeur et
 (define node-splay-tree
@@ -179,8 +198,7 @@
                           #f)))                         
             '() lst))
 ; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
-
-    
+  
 ;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
 (define foldr
   (lambda (f base lst)  
