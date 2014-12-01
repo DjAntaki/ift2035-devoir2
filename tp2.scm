@@ -191,17 +191,6 @@
   ((string> str1 str2) 'right)
   ((string= str1 str2) 'youfoundme)
   (else -1)))
-    
-(define foldtree
-        (lambda (f root key)
-                (if (null? root)
-                    (f root key)
-                    (let ((cmp (compare key (node-key root))))
-                    (cond 
-                        ((equal? cmp 'youfoundme) f ')
-                        ((equal? cmp 'right) (+ 1 (node-depth (node-rchild root) key))
-                        ((equal? cmp 'left) (+ 1 (node-depth (node-lchild root) key)) 
-                         (else #f)))))))                                                                       
 
 ;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
 (define foldr
