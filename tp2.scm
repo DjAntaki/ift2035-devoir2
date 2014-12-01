@@ -185,7 +185,7 @@
 	)
 )
 
-(display (node-find '((() "a" (b r a v o) ()   ) "b" (b) ()) "a"))
+(assert (node-find '((() "a" (b r a v o) ()   ) "b" (b) ()) "a"))
     
 ;; prends en input une liste de terme a concatener
 ;; retourne une liste de definition concatener
@@ -225,6 +225,9 @@
                 (cons '() y)
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
+ 
+(assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))))
+(assert (equal? (string-split '(a p p l e p i e)) '(a p p l e p i e)))
  
 (define printligne
 	(lambda (i x)
