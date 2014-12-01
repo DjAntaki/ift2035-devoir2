@@ -146,14 +146,27 @@
         (lambda (g p x)
                 (node-reconstruct x ())))                
                 
-  |#              
+  |#
+(define (compare str1 str2)
+ (cond
+  ((string<? str1 str2) 'left)
+  ((string>? str1 str2) 'right)
+  ((string=? str1 str2) 'youfoundme)
+  (else -1))
+)
+  
 (define (node-find root key) 
- (let ((cmp (if (null? root) #f (compare key (node-key root)))))
-  (cond 
-    ((equal? cmp 'youfoundme) root )
-    ((equal? cmp 'right) (node-find (node-rchild root) key))
-    ((equal? cmp 'left) (node-find (node-lchild root) key )) 
-    (else #f))))
+	(let ((cmp (if (null? root) #f (compare key (node-key root)))))
+		(cond 
+			((equal? cmp 'youfoundme) root )
+			((equal? cmp 'right) (node-find (node-rchild root) key))
+			((equal? cmp 'left) (node-find (node-lchild root) key )) 
+		(else #f)
+		)
+	)
+)
+
+(display (node-find '((() "a" (b r a v o) ()   ) "b" (b) ()) "a"))
     
 ;; prends en input une liste de terme a concatener
 ;; retourne une liste de definition concatener
@@ -166,12 +179,7 @@
                           #f)))                         
             '() lst))
 ; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
-(define (compare str1 str2)
- (cond
-  ((string< str1 str2) 'left)
-  ((string> str1 str2) 'right)
-  ((string= str1 str2) 'youfoundme)
-  (else -1)))
+
     
 ;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
 (define foldr
@@ -182,10 +190,11 @@
             (foldr f base (cdr lst))))))
 
 (define (gerer-concat str dict)
-		(let ((x (string-split (caddr str) '+)))
-			(display x);;;(make-concatdefinition x dict)
-		)
+		;;;(let ((x (string-split (caddr str) '+)))
+			(make-concatdefinition str dict);;;(display x)
+		;;;)
 )
+(display (gerer-concat '((ab)(cd)(ef)) '()))
 ;;;
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -198,28 +207,45 @@
                 (cons '() y)
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
-  
+ 
+(define printligne
+	(lambda (i x)
+	(begin (display i) (display x)) (newline)))
+	
 ;;; TESTÉ
 ;;;(eval-expr '(a b c =)) => (- (a b c))
 ;;;(eval-expr '(a b c)) => (a b c)
 ;;;(eval-expr '(a b c = d e f)) => (= (a b c) (d e f))
-(define (eval-expr expr) 
-        (if (member '= expr) 
-			(let ((expr (string-split expr '=)))
-				(if (null? (cadr expr))
-					(cons '- (list (car expr)));;;retrait du mot expr
-					(append (list '= (car expr))
-							(cdr expr));;;ajouter le mot.  REMARQUE: S'il y a plusieurs '= dans expr, c'est bizarre 
+(define (eval-expr expr)
+		;;;(printligne 1 expr)
+		;;;(assert (member '= expr))
+		;;;(assert (member = expr)) ça fail tout le temps
+        ;;;(printligne 2 expr)
+		(if (member '= expr) 
+			(let ((expr2 (string-split expr '=)))
+				;;;(display expr2)
+
+				(if (null? (cadr expr2))
+					(cons '- (list (car expr2)));;;retrait du mot expr
+					(append (list '= (car expr2))
+							(cdr expr2));;;ajouter le mot.  REMARQUE: S'il y a plusieurs '= dans expr, c'est bizarre 
 				)
 			)
-		expr;;;recherche du mot expr    
+			expr;;;recherche du mot expr    
 		)
-)    
+)
+(assert (equal? (eval-expr '(a b c = d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
+(assert (equal? (string-split (caddr (eval-expr '(a b c = d e + f g + h i))) '+) '((d e) (f g) (h i))))
+
+;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
+;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))    
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
    ;;;evaluer l'expression
+   ;;;(display expr)
    (let ((result (eval-expr expr)))
+			;;;(display (eval-expr expr))
 			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut delete le mot key
 				  (display result);;;appel à node-delete avec (cdr result)?
 				 )
