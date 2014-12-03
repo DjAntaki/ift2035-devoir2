@@ -18,6 +18,24 @@
 ;;; fonctions ne doivent pas faire d'affichage car c'est la fonction
 ;;; "go" qui se charge de cela.
 ;;;----------------------------------------------------------------------------
+(define printligne
+	(lambda (i x)
+	(begin (display i) (display x)) (newline))
+)
+
+(define foldl
+  (lambda (f base lst)  
+    (if (null? lst)
+         base
+		 (foldl f (f base (car lst)) (cdr lst)))))
+
+;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
+(define foldr
+  (lambda (f base lst)  
+    (if (null? lst)
+         base
+         (f (car lst)
+            (foldr f base (cdr lst))))))
 
 (define assert (lambda (expr . message)
                  (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
@@ -63,6 +81,7 @@
                                                  (node-reconstruct root (node-remove (node-lchild root) node) (node-rchild root))))
                         (else #f))))
         )
+)
 
 ; Évalue la profondeur et
 (define node-splay-tree
@@ -166,6 +185,8 @@
                 (node-reconstruct x ())))                
                 
   |#
+
+; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
 (define (compare str1 str2)
  (cond
   ((string<? str1 str2) 'left)
@@ -173,9 +194,53 @@
   ((string=? str1 str2) 'youfoundme)
   (else -1))
 )
+
+(define (compare2 list1 list2)
+	(if (or (null? list1) (null? list2))
+		'erreur
+		(let ((comp (compare3 list1 list2)))
+			(cond ((null? comp) 'youfoundme)
+				((equal? comp 'left) 'left)
+				((equal? comp 'right) 'right)
+				(else 'right;;; compare ('(a b c) '(a b c d e f)) => right		  
+				)
+			)
+		)
+	)
+)
+
+(define (compare3 list1 list2)
+	(foldl
+		(lambda (lst symb)
+			(cond ((null? lst) 'left);;; compare ('(a b c d e) '(a b)) => left	
+				  ((equal? lst 'left) 'left)
+				  ((equal? lst 'right) 'right)
+				  (else (let ((str1 (symbol->string (car lst)))(str2 (symbol->string symb)))
+							(cond ((string<? str1 str2) 'left)
+								  ((string>? str1 str2) 'right)
+								  ((string=? str1 str2) (cdr lst))
+							
+							)
+						)
+				  )
+			)
+		)
+		list1
+		list2
+	)
+)
+
+(assert (equal? (compare2 '(a b c) '()) 'erreur))
+(assert (equal? (compare2 '() '(d e f)) 'erreur))
+(assert (equal? (compare2 '() '()) 'erreur))
+(assert (equal? (compare2 '(a b c) '(a b)) 'right))
+(assert (equal? (compare2 '(c a d r e) '(c a d r e r)) 'left))
+(assert (equal? (compare2 '(q w e r t y) '(q w e r t y)) 'youfoundme))
+(assert (equal? (compare2 '(q w e r t = y) '(q w e r t = y)) 'youfoundme))
+(assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
   
-(define (node-find root key) 
-	(let ((cmp (if (null? root) #f (compare key (node-key root)))))
+(define (node-find root key)
+	(let ((cmp (if (null? root) #f (compare2 key node-key root))))
 		(cond 
 			((equal? cmp 'youfoundme) root )
 			((equal? cmp 'right) (node-find (node-rchild root) key))
@@ -184,8 +249,6 @@
 		)
 	)
 )
-
-(display (node-find '((() "a" (b r a v o) ()   ) "b" (b) ()) "a"))
     
 ;; prends en input une liste de terme a concatener
 ;; retourne une liste de definition concatener
@@ -196,24 +259,16 @@
                      (if (and d y) 
                          (cons (node-definition d) y)
                           #f)))                         
-            '() lst))
-; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
-  
-;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
-(define foldr
-  (lambda (f base lst)  
-    (if (null? lst)
-         base
-         (f (car lst)
-            (foldr f base (cdr lst))))))
+            '() lst)
+)
 
 (define (gerer-concat str dict)
 		;;;(let ((x (string-split (caddr str) '+)))
 			(make-concatdefinition str dict);;;(display x)
 		;;;)
 )
-(display (gerer-concat '((ab)(cd)(ef)) '()))
-;;;
+;;;(printligne 222 (gerer-concat '((ab)(cd)(ef)) '())) ;;;'(() "ab" (d e f) ())
+
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
 ;;;     (string-split '(a p p l e p i e)) => (a p p l e p i e)
@@ -225,11 +280,9 @@
                 (cons '() y)
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
- 
-(define printligne
-	(lambda (i x)
-	(begin (display i) (display x)) (newline)))
-	
+
+;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
+
 ;;; TESTÉ
 ;;;(eval-expr '(a b c =)) => (- (a b c))
 ;;;(eval-expr '(a b c)) => (a b c)
@@ -239,8 +292,9 @@
 		;;;(assert (member '= expr))
 		;;;(assert (member = expr)) ça fail tout le temps
         ;;;(printligne 2 expr)
-		(if (member '= expr) 
-			(let ((expr2 (string-split expr '=)))
+		(if (member #\= expr) 
+			(let ((expr2 (string-split expr #\=)))
+				;;;(display 3)
 				;;;(display expr2)
 
 				(if (null? (cadr expr2))
@@ -252,8 +306,11 @@
 			expr;;;recherche du mot expr    
 		)
 )
-(assert (equal? (eval-expr '(a b c = d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
-(assert (equal? (string-split (caddr (eval-expr '(a b c = d e + f g + h i))) '+) '((d e) (f g) (h i))))
+(printligne 1 (eval-expr '(a b c #\= d e + f g + h i)))
+;;;(display (eval-expr '(a b c #\= d e + f g + h i)))
+(assert (equal? (eval-expr '(a b c #\= d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
+(display 2)
+(assert (equal? (string-split (caddr (eval-expr '(a b c #\= d e + f g + h i))) '+) '((d e) (f g) (h i))))
 
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 ;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))    
@@ -261,16 +318,17 @@
 (define traiter
   (lambda (expr dict)
    ;;;evaluer l'expression
-   ;;;(display expr)
+   ;;;(printligne 1 expr)
+   ;;;(printligne 2 (member #\= expr))
    (let ((result (eval-expr expr)))
 			;;;(display (eval-expr expr))
 			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut delete le mot key
 				  (display result);;;appel à node-delete avec (cdr result)?
 				 )
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
-					(if (member '+ (caddr result))
-						(gerer-concat result dict);;;(printligneet1 result);;;concaténation
-						result;;;ajout normal
+					(if (member #\+ (caddr result))
+						(printligne 1 result);;;(display (gerer-concat result dict));;;concaténation
+						(printligne 2 result);;;ajout normal
 					)
 				 )
 				 (else;;;result est de la forme (key) et il faut rechercher le mot key
