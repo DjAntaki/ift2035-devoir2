@@ -240,7 +240,7 @@
 (assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
   
 (define (node-find root key)
-	(let ((cmp (if (null? root) #f (compare2 key node-key root))))
+	(let ((cmp (if (null? root) #f (compare2 key (node-key root)))))
 		(cond 
 			((equal? cmp 'youfoundme) root )
 			((equal? cmp 'right) (node-find (node-rchild root) key))
@@ -251,7 +251,7 @@
 )
 
 
-(assert (node-find '((() "a" (b r a v o) ()   ) "b" (b) ()) "a"))
+(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
   
 ;; prends en input une liste de terme a concatener
 ;; retourne une liste de definition concatener
@@ -267,10 +267,10 @@
 
 (define (gerer-concat str dict)
 		;;;(let ((x (string-split (caddr str) '+)))
-			(make-concatdefinition str dict);;;(display x)
+			(make-concatdefinition dict str);;;(display x)
 		;;;)
 )
-;;;(printligne 222 (gerer-concat '((ab)(cd)(ef)) '())) ;;;'(() "ab" (d e f) ())
+(assert(equal? (gerer-concat '((a b)) '(() (a b) (z z z) ())) '((z z z)))) ;;;Il y a 1 niveau d'encapsulation
 
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -283,9 +283,10 @@
                 (cons '() y)
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
-
-(assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))))
-(assert (equal? (string-split '(a p p l e p i e)) '(a p p l e p i e)))
+	
+(assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s) '+) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))))
+(assert (equal? (string-split '(a p p l e p i e) +) '((a p p l e p i e))));;;si dans la liste à splitter il n'y a aucune occurence du séparateur, 
+																		  ;;;on retourne la liste de la liste initiale (1 niveau d'encapsulation)
  
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 
@@ -312,10 +313,8 @@
 			expr;;;recherche du mot expr    
 		)
 )
-(printligne 1 (eval-expr '(a b c #\= d e + f g + h i)))
-;;;(display (eval-expr '(a b c #\= d e + f g + h i)))
+
 (assert (equal? (eval-expr '(a b c #\= d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
-(display 2)
 (assert (equal? (string-split (caddr (eval-expr '(a b c #\= d e + f g + h i))) '+) '((d e) (f g) (h i))))
 
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
@@ -338,7 +337,8 @@
 					)
 				 )
 				 (else;;;result est de la forme (key) et il faut rechercher le mot key
-				 (...);;;appeler node-find
+				 (display "recherche")
+				 (node-find dict result);;;appeler node-find
 				 )
 			)
 		)
