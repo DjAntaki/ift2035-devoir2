@@ -95,23 +95,25 @@
 (define node-remove
         (lambda (root key) 
                  (let ((cmp (if (null? root) #f (compare key (node-key root)))))
+				 (display cmp)
                     (cond 
                         ((equal? cmp 'youfoundme) (if (null? (node-lchild root))
                                                       (node-rchild root)
-                                                      (node-lchild root))
-													  ;;;manque de quoi ici
+                                                      (if (null? (node-rchild root))
+														   (node-lchild root)
+														    (node-insert (node-lchild root) (node-rchild root)))))
                         ((equal? cmp 'right) (if (null? (node-rchild root))
                                                  root 
                                                  (node-reconstruct root (node-lchild root) (node-remove (node-rchild root) key)))
 												 )
                         ((equal? cmp 'left)  (if (null? (node-lchild root))
                                                  root
-                                                 (node-reconstruct root (node-remove (node-lchild root) node) (node-rchild root))))
-                        (else #f))))
+                                                 (node-reconstruct root (node-remove (node-lchild root) key) (node-rchild root))))
+                        (else '())))
         )
 )
 
-;;;(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
+(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
 
 ; Évalue la profondeur et
 (define node-splay-tree
@@ -288,7 +290,9 @@
     '(()) str)))
 	
 ;;;(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
- 
+
+;;;prend une liste de chaines et retourne la concatenation de ces chaines en une seule liste
+;;;ex: ((a b c) (d e) (f g h i)) => (a b c d e f g h i)
 (define (construire-def lst)
 	(foldr
 		(lambda(x y)
@@ -373,7 +377,8 @@
 ;;;(display (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)))
 (assert (equal? (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
-;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))    
+;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))  
+(display (eval-expr '(#\= #\a)))  
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
@@ -381,10 +386,11 @@
    ;;;evaluer l'expression
    ;;;(printligne 1 expr)
    ;;;(printligne 2 (member #\= expr))
+   (if (null? expr) (cons (string->list "entree vide") dict) ;;;l'utilisateur a taper enter
    (let ((result (eval-expr expr)))
 			;;;(display (eval-expr expr))
 			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
-				  (node-remove dict (cadr result));;;appel à node-remove avec (cdr result)?
+				  (cons (string->list "delete") (node-remove dict (cadr result)));;;appel à node-remove avec (cdr result)?
 				 )
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
 					(if (member #\+ (caddr result))
@@ -399,6 +405,7 @@
 				 (cons (node-definition (node-find dict result)) dict)
 				 )
 			)
+		)
 		)
    ;;;appliquer le traitement approprié
   #|
