@@ -64,7 +64,9 @@
                         ((equal? cmp 'left)  (if (null? (node-lchild root))
                                                  (node-reconstruct root node (node-rchild root)) 
                                                  (node-reconstruct root (node-insert (node-lchild root) node) (node-rchild root))))
-                        (else #f)))))
+                        (else node)))))
+
+;;;(display (node-insert '() '(() (a b) (d e f i n i t i o n) ())))
                     
 (define node-remove
         (lambda (root key) 
@@ -188,17 +190,19 @@
 
 ; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
 (define (compare str1 str2)
+(let ((string1 (list->string str1)) (string2 (list->string str2)))
  (cond
-  ((string<? str1 str2) 'left)
-  ((string>? str1 str2) 'right)
-  ((string=? str1 str2) 'youfoundme)
+  ((string<? string1 string2) 'left)
+  ((string>? string1 string2) 'right)
+  ((string=? string1 string2) 'youfoundme)
   (else -1))
+)
 )
 
 (define (compare2 list1 list2)
 	(if (or (null? list1) (null? list2))
 		'erreur
-		(let ((comp (compare3 list1 list2)))
+		(let ((comp (compare3 (symbol->string list1) (symbol->string list2))))
 			(cond ((null? comp) 'youfoundme)
 				((equal? comp 'left) 'left)
 				((equal? comp 'right) 'right)
@@ -215,7 +219,7 @@
 			(cond ((null? lst) 'left);;; compare ('(a b c d e) '(a b)) => left	
 				  ((equal? lst 'left) 'left)
 				  ((equal? lst 'right) 'right)
-				  (else (let ((str1 (symbol->string (car lst)))(str2 (symbol->string symb)))
+				  (else (let ((str1 (car lst))(str2 symb))
 							(cond ((string<? str1 str2) 'left)
 								  ((string>? str1 str2) 'right)
 								  ((string=? str1 str2) (cdr lst))
@@ -238,9 +242,10 @@
 (assert (equal? (compare2 '(q w e r t y) '(q w e r t y)) 'youfoundme))
 (assert (equal? (compare2 '(q w e r t = y) '(q w e r t = y)) 'youfoundme))
 (assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
-  
+
+ 
 (define (node-find root key)
-	(let ((cmp (if (null? root) #f (compare2 key (node-key root)))))
+	(let ((cmp (if (null? root) #f (compare key (node-key root)))))
 		(cond 
 			((equal? cmp 'youfoundme) root )
 			((equal? cmp 'right) (node-find (node-rchild root) key))
@@ -251,7 +256,7 @@
 )
 
 
-(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
+;;;(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
   
 ;; prends en input une liste de terme a concatener
 ;; retourne une liste de definition concatener
@@ -270,7 +275,7 @@
 			(make-concatdefinition dict str);;;(display x)
 		;;;)
 )
-(assert(equal? (gerer-concat '((a b)) '(() (a b) (z z z) ())) '((z z z)))) ;;;Il y a 1 niveau d'encapsulation
+;;;(assert(equal? (gerer-concat '((a b)) '(() (a b) (z z z) ())) '((z z z)))) ;;;Il y a 1 niveau d'encapsulation
 
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -317,11 +322,20 @@
 (assert (equal? (eval-expr '(a b c #\= d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
 (assert (equal? (string-split (caddr (eval-expr '(a b c #\= d e + f g + h i))) '+) '((d e) (f g) (h i))))
 
+(define (affichage-dict dictio)
+	(begin
+	(display dictio)
+	dictio
+	
+	)
+
+)
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 ;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))    
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
+(affichage-dict dict)
    ;;;evaluer l'expression
    ;;;(printligne 1 expr)
    ;;;(printligne 2 (member #\= expr))
@@ -333,7 +347,8 @@
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
 					(if (member #\+ (caddr result))
 						(printligne 1 result);;;(display (gerer-concat result dict));;;concaténation
-						(printligne 2 result);;;ajout normal
+						(cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())))
+						;;;(printligne 2 result);;;ajout normal
 					)
 				 )
 				 (else;;;result est de la forme (key) et il faut rechercher le mot key
@@ -343,7 +358,7 @@
 			)
 		)
    ;;;appliquer le traitement approprié
-  
+  #|
   ;;;sortir la réponse appropriée
    (cons (append (string->list "*** le programme est ")
                   '(#\I #\N #\C #\O #\M #\P #\L #\E #\T #\! #\newline)
@@ -352,7 +367,8 @@
                   (string->list "\n*** nombre de caractères: ")
                   (string->list (number->string (length expr)))
                   '(#\newline))
-          dict)))
+          dict)|#))
+
 
 ;;;----------------------------------------------------------------------------
 ;;; Ne pas modifier cette section.
