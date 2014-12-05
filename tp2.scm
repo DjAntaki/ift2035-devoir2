@@ -23,20 +23,6 @@
 	(begin (display i) (display x)) (newline))
 )
 
-(define foldl
-  (lambda (f base lst)  
-    (if (null? lst)
-         base
-		 (foldl f (f base (car lst)) (cdr lst)))))
-
-;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
-(define foldr
-  (lambda (f base lst)  
-    (if (null? lst)
-         base
-         (f (car lst)
-            (foldr f base (cdr lst))))))
-
 (define assert (lambda (expr . message)
                  (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
                      (display color)
@@ -45,6 +31,30 @@
                      (display "\n")
                      (display reset))))
 
+(define foldl
+  (lambda (f base lst)  
+    (if (null? lst)
+         base
+		 (foldl f (f base (car lst)) (cdr lst)))))
+
+(assert (equal? (foldl + 1 '(1 2 3)) 7) "fold-left an addition")
+(assert (equal? (foldl string-append "" '("a" "b" "c")) "abc") "fold-left a string")
+(assert (equal? (foldl string-append "" '()) "") "fold-left an empty list")
+   
+         
+;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
+(define foldr
+  (lambda (f base lst)  
+    (if (null? lst)
+         base
+         (f (car lst)
+            (foldr f base (cdr lst))))))
+
+(assert (equal? (foldr + 1 '(1 2 3)) 7) "foldr testing" )
+(assert (equal? (foldr string-append "" '("a" "b" "c")) "cba") "foldr testing wierd")
+(assert (equal? (foldr string-append "" '()) "") "foldr testing")
+
+
 
 (define node-key cadr)
 (define node-definition caddr)
@@ -52,6 +62,11 @@
 (define node-rchild cadddr)
 (define (node-create key definition lchild rchild) (list lchild key definition rchild))
 (define (node-reconstruct x lchild rchild) (list lchild (node-key x) (node-definition x) rchild))
+
+(assert (equal? '() (node-lchild '(() "term" ("def1" "def2") ()))) "get the left child of a node")
+(assert (equal? "term" (node-key '(() "term" ("def1" "def2") ()))) "get the term of a node")
+(assert (equal? '("def1" "def2") (node-definition '(() "term" ("def1" "def2") ()))) "get the definitions of a node")
+(assert (equal? '() (node-rchild '(() "term" ("def1" "def2") ()))) "get the right child of a node")
 
 (define node-insert 
         (lambda (root node) 
@@ -148,6 +163,7 @@
 ;Opération zig. p etait root -> c est root
 ; quand x est le right child de p et p est root
 ; ((C) P ((B) X (A))) -> (((C) P (B)) X (A))
+
 (define zig-right
     (lambda (p x) 
             (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x))(node-rchild x) )))
@@ -269,6 +285,8 @@
                           #f)))                         
             '() lst)
 )
+(display (make-concatdefinition '(()(a b c)(p a t a t e)(() (d e f) (p o i l) ())) '((a b c) (d e f)) ))
+(assert (equal? (make-concatdefinition '(()(a b c)(p a t a t e)(() (d e f) (p o i l) ())) '((a b c) (d e f)) ) '((p a t a t e) (p o i l))) "test de concatenation de definition")
 
 (define (gerer-concat str dict)
 		;;;(let ((x (string-split (caddr str) '+)))
@@ -292,7 +310,9 @@
 (assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s) '+) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))))
 (assert (equal? (string-split '(a p p l e p i e) +) '((a p p l e p i e))));;;si dans la liste à splitter il n'y a aucune occurence du séparateur, 
 																		  ;;;on retourne la liste de la liste initiale (1 niveau d'encapsulation)
- 
+
+(assert (equal? (string-split '(1 2 3) 2) '((1) (3))) "regular split")
+(assert (equal? (string-split '() 2) '()) "splitting an empty list") 
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 
 ;; TESTÉ
