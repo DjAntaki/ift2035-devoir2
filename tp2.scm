@@ -23,6 +23,8 @@
 	(begin (display i) (display x)) (newline))
 )
 
+(define (exist x) (not x))
+
 (define assert (lambda (expr . message)
                  (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
                      (display color)
@@ -81,7 +83,7 @@
         (lambda (root node) 
                  (let ((cmp (if (null? root) #f (compare (node-key node) (node-key root)))))
                     (cond 
-                        ((equal? cmp 'youfoundme) root )
+                        ((equal? cmp 'youfoundme) (node-reconstruct node (node-lchild root) (node-rchild root)))
                         ((equal? cmp 'right) (if (null? (node-rchild root))
                                                  (node-reconstruct root (node-lchild root) node) 
                                                  (node-reconstruct root (node-lchild root) (node-insert (node-rchild root) node))))
@@ -272,7 +274,7 @@
 			((equal? cmp 'youfoundme) root )
 			((equal? cmp 'right) (node-find (node-rchild root) key))
 			((equal? cmp 'left) (node-find (node-lchild root) key )) 
-		(else '(() () (#\t #\e #\r #\m #\e #\space #\i #\n #\c #\o #\n #\n #\u) ()))
+		(else '(() () (#\t #\e #\r #\m #\e #\space #\i #\n #\c #\o #\n #\n #\u) ())) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		)
 	)
 )
@@ -389,11 +391,13 @@
    (if (null? expr) (cons (string->list "entree vide") dict) ;;;l'utilisateur a taper enter
    (let ((result (eval-expr expr)))
 			;;;(display (eval-expr expr))
+            (if (exist (cdr result))
 			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
 				  (cons (string->list "delete") (node-remove dict (cadr result)));;;appel à node-remove avec (cdr result)?
 				 )
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
-					(if (member #\+ (caddr result))
+					
+                    (if (member #\+ (caddr result))
 						;;;(display (construire-def (gerer-concat result dict)));;;(printligne 1 result);;;concaténation
 						(cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def (gerer-concat result dict)) '() '())))
 						(cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())));;;ajout normal
@@ -404,7 +408,8 @@
 				 ;;;(display (node-find dict result));;;appeler node-find
 				 (cons (node-definition (node-find dict result)) dict)
 				 )
-			)
+			)(cons (string->list "entree non-valide") dict))
+            
 		)
 		)
    ;;;appliquer le traitement approprié
