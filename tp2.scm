@@ -54,7 +54,16 @@
 (assert (equal? (foldr string-append "" '("a" "b" "c")) "cba") "foldr testing wierd")
 (assert (equal? (foldr string-append "" '()) "") "foldr testing")
 
-
+; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
+(define (compare str1 str2)
+(let ((string1 (list->string str1)) (string2 (list->string str2)))
+ (cond
+  ((string<? string1 string2) 'left)
+  ((string>? string1 string2) 'right)
+  ((string=? string1 string2) 'youfoundme)
+  (else -1))
+)
+)
 
 (define node-key cadr)
 (define node-definition caddr)
@@ -90,15 +99,19 @@
                         ((equal? cmp 'youfoundme) (if (null? (node-lchild root))
                                                       (node-rchild root)
                                                       (node-lchild root))
+													  ;;;manque de quoi ici
                         ((equal? cmp 'right) (if (null? (node-rchild root))
                                                  root 
-                                                 (node-reconstruct root (node-lchild root) (node-remove (node-rchild root) key))))
+                                                 (node-reconstruct root (node-lchild root) (node-remove (node-rchild root) key)))
+												 )
                         ((equal? cmp 'left)  (if (null? (node-lchild root))
                                                  root
                                                  (node-reconstruct root (node-remove (node-lchild root) node) (node-rchild root))))
                         (else #f))))
         )
 )
+
+;;;(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
 
 ; Évalue la profondeur et
 (define node-splay-tree
@@ -204,16 +217,7 @@
                 
   |#
 
-; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
-(define (compare str1 str2)
-(let ((string1 (list->string str1)) (string2 (list->string str2)))
- (cond
-  ((string<? string1 string2) 'left)
-  ((string>? string1 string2) 'right)
-  ((string=? string1 string2) 'youfoundme)
-  (else -1))
-)
-)
+
 
 (define (compare2 list1 list2)
 	(if (or (null? list1) (null? list2))
@@ -249,7 +253,7 @@
 		list2
 	)
 )
-
+#|
 (assert (equal? (compare2 '(a b c) '()) 'erreur))
 (assert (equal? (compare2 '() '(d e f)) 'erreur))
 (assert (equal? (compare2 '() '()) 'erreur))
@@ -258,7 +262,7 @@
 (assert (equal? (compare2 '(q w e r t y) '(q w e r t y)) 'youfoundme))
 (assert (equal? (compare2 '(q w e r t = y) '(q w e r t = y)) 'youfoundme))
 (assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
-
+|#
  
 (define (node-find root key)
 	(let ((cmp (if (null? root) #f (compare key (node-key root)))))
@@ -266,34 +270,10 @@
 			((equal? cmp 'youfoundme) root )
 			((equal? cmp 'right) (node-find (node-rchild root) key))
 			((equal? cmp 'left) (node-find (node-lchild root) key )) 
-		(else #f)
+		(else '(() () (#\t #\e #\r #\m #\e #\space #\i #\n #\c #\o #\n #\n #\u) ()))
 		)
 	)
 )
-
-
-;;;(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
-  
-;; prends en input une liste de terme a concatener
-;; retourne une liste de definition concatener
-(define (make-concatdefinition dict lst)
-        (foldr 
-            (lambda (x y) 
-                    (let ((d (node-find dict x)))
-                     (if (and d y) 
-                         (cons (node-definition d) y)
-                          #f)))                         
-            '() lst)
-)
-(display (make-concatdefinition '(()(a b c)(p a t a t e)(() (d e f) (p o i l) ())) '((a b c) (d e f)) ))
-(assert (equal? (make-concatdefinition '(()(a b c)(p a t a t e)(() (d e f) (p o i l) ())) '((a b c) (d e f)) ) '((p a t a t e) (p o i l))) "test de concatenation de definition")
-
-(define (gerer-concat str dict)
-		;;;(let ((x (string-split (caddr str) '+)))
-			(make-concatdefinition dict str);;;(display x)
-		;;;)
-)
-;;;(assert(equal? (gerer-concat '((a b)) '(() (a b) (z z z) ())) '((z z z)))) ;;;Il y a 1 niveau d'encapsulation
 
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -307,10 +287,49 @@
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
 	
+;;;(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
+ 
+(define (construire-def lst)
+	(foldr
+		(lambda(x y)
+			(append x y)
+		)
+		'()
+		lst
+	)
+
+)
+;; prends en input une liste de terme a concatener
+;; retourne une liste de definition concatener
+(define (make-concatdefinition dict lst)
+        (foldr 
+            (lambda (x y) 
+                    (let ((d (node-find dict x)))
+                     (if (and d y) 
+                         (cons (node-definition d) y)
+                          #f)))                         
+            '() lst)
+)
+(display (make-concatdefinition '(()(#\a #\b #\c)(#\p #\a #\t #\a #\t #\e)(() (#\d #\e #\f) (#\p #\o #\i #\l) ())) '((#\a #\b #\c) (#\d #\e #\f)) ))
+(assert (equal? (make-concatdefinition '(()(#\a #\b #\c)(#\p #\a #\t #\a #\t #\e)(() (#\d #\e #\f) (#\p #\o #\i #\l) ())) '((#\a #\b #\c) (#\d #\e #\f)) ) '((#\p #\a #\t #\a #\t #\e) (#\p #\o #\i #\l))) "test de concatenation de definition")
+
+(define (gerer-concat str dict)
+		;;;(display str)
+		;;;(display (caddr str))
+		(let ((x (string-split (caddr str) #\+)))
+		;;;(display x)
+			(make-concatdefinition dict x);;;(display x)
+		)
+)
+		
+(assert(equal? (make-concatdefinition '(() (#\a #\b) (#\z #\z #\z) ()) '((#\a #\b))) '((#\z #\z #\z))) "test de make-concatdefinition") ;;;Il y a 1 niveau d'encapsulation
+(assert (equal? (make-concatdefinition '(() (#\b) (#\b #\b #\b) (() (#\c) (#\c #\c #\c) ())) '((#\b) (#\c))) '((#\b #\b #\b) (#\c #\c #\c))))
+
+(assert (equal? (gerer-concat '('= (#\a) (#\b #\+ #\c)) '(() (#\b) (#\b #\b #\b) (  () (#\c) (#\c #\c #\c) ()  ))) '((#\b #\b #\b) (#\c #\c #\c))))
+
 (assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s) '+) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))))
 (assert (equal? (string-split '(a p p l e p i e) +) '((a p p l e p i e))));;;si dans la liste à splitter il n'y a aucune occurence du séparateur, 
 																		  ;;;on retourne la liste de la liste initiale (1 niveau d'encapsulation)
-
 (assert (equal? (string-split '(1 2 3) 2) '((1) (3))) "regular split")
 (assert (equal? (string-split '() 2) '()) "splitting an empty list") 
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
@@ -345,35 +364,39 @@
 (define (affichage-dict dictio)
 	(begin
 	(display dictio)
+	(newline)
 	dictio
 	
 	)
 
 )
+;;;(display (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)))
+(assert (equal? (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 ;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))    
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
-(affichage-dict dict)
+   ;;;(affichage-dict dict)
    ;;;evaluer l'expression
    ;;;(printligne 1 expr)
    ;;;(printligne 2 (member #\= expr))
    (let ((result (eval-expr expr)))
 			;;;(display (eval-expr expr))
-			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut delete le mot key
-				  (display result);;;appel à node-delete avec (cdr result)?
+			(cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
+				  (node-remove dict (cadr result));;;appel à node-remove avec (cdr result)?
 				 )
 				 ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
 					(if (member #\+ (caddr result))
-						(printligne 1 result);;;(display (gerer-concat result dict));;;concaténation
-						(cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())))
-						;;;(printligne 2 result);;;ajout normal
+						;;;(display (construire-def (gerer-concat result dict)));;;(printligne 1 result);;;concaténation
+						(cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def (gerer-concat result dict)) '() '())))
+						(cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())));;;ajout normal
 					)
 				 )
 				 (else;;;result est de la forme (key) et il faut rechercher le mot key
-				 (display "recherche")
-				 (node-find dict result);;;appeler node-find
+				 ;;;(display "recherche")
+				 ;;;(display (node-find dict result));;;appeler node-find
+				 (cons (node-definition (node-find dict result)) dict)
 				 )
 			)
 		)
@@ -395,6 +418,7 @@
 
 (define go
   (lambda (dict)
+	(affichage-dict dict)
     (print "? ")
     (let ((ligne (read-line)))
       (if (string? ligne)
