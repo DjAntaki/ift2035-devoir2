@@ -56,6 +56,19 @@
 (assert (equal? (foldr string-append "" '("a" "b" "c")) "cba") "foldr testing wierd")
 (assert (equal? (foldr string-append "" '()) "") "foldr testing")
 
+;Calcule à partir de la root la profondeur jusqu'au noeud avec la clée cherchée                                                                       
+(define (node-depth root key)
+        (if (null? root) 
+             0
+             (let ((cmp (compare key (node-key root))))
+                  (cond 
+                        ((equal? cmp 'youfoundme) 1)
+                        ((equal? cmp 'right) (+ 1 (node-depth (node-rchild root) key)))
+                        ((equal? cmp 'left) (+ 1 (node-depth (node-lchild root) key))) 
+                        (else #f)))))                                                                       
+                                                                       
+
+
 ; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
 (define (compare str1 str2)
 (let ((string1 (list->string str1)) (string2 (list->string str2)))
@@ -79,6 +92,157 @@
 (assert (equal? '("def1" "def2") (node-definition '(() "term" ("def1" "def2") ()))) "get the definitions of a node")
 (assert (equal? '() (node-rchild '(() "term" ("def1" "def2") ()))) "get the right child of a node")
 
+;
+;Opération zig. p etait root -> c est root
+; quand x est le left child de p et p est root
+; (((A) X (B)) P (C)) -> ((A) X ((B) P (C)))
+(define zig
+    (lambda (p x) 
+            (node-reconstruct x (node-lchild x) (node-reconstruct p (node-rchild x) (node-rchild p)))))
+;Opération zig. p etait root -> c est root
+; quand x est le right child de p et p est root
+; ((C) P ((B) X (A))) -> (((C) P (B)) X (A))
+
+
+
+(define zag
+    (lambda (p x) 
+            (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x))(node-rchild x) )))
+; x is right child of p is right child of g
+(define zag-zag
+        (lambda (g p x)
+            (node-reconstruct x (node-reconstruct p (node-reconstruct g (node-lchild g) 
+                                                                        (node-lchild p)) 
+                                                    (node-lchild x))
+                                (node-rchild x))))   
+
+; x is leftchild of p is leftchild of g
+(define zig-zig
+        (lambda (g p x)
+            (node-reconstruct x (node-lchild x) 
+                                (node-reconstruct p (node-rchild x)  
+                                                    (node-reconstruct g (node-rchild p)
+                                                                       (node-rchild g))))))
+
+
+
+                                                                       
+(define zig-zag
+        (lambda (g p x)
+                (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x)) (node-reconstruct g (node-rchild x)(node-rchild g) ))))        
+
+;pas encore fait                
+(define zag-zig
+        (lambda (g p x)
+                (node-reconstruct x (node-reconstruct g (node-lchild g) (node-lchild x)) (node-reconstruct p (node-rchild x)(node-rchild p) ))))
+                
+(define get-next-node 
+        (lambda (actual key)
+                (display (node-key actual))
+                (let ((cmp (if (null? actual) #f (compare key (node-key actual)))))
+  (display cmp)
+  (cond 
+    ((equal? cmp 'right) (if (exist (node-rchild actual))
+                                    (cons (node-rchild actual) 'right)
+                                    #f))
+    ((equal? cmp 'left) (if (exist (node-lchild actual))
+                                   (cons (node-lchild actual) 'left)
+                                   #f))
+    ((equal? cmp 'youfoundme) (cons actual 'youfoundme))
+    (else #f))))) 
+; key est la clée recherchée
+; g (s'il existe) est le noeud parent de p.
+; p (s'il existe) est une paire avec le noeud apres g dans la recheche de la clée dans l'arbre
+; x (s'il existe) est une paire avec le noeud apres p dans la recheche de la clée dans l'arbre
+(define node-splay 
+        (lambda (g key)
+                ;assign
+                (let ((p (get-next-node g key))) ; p est soit 
+                     (cond 
+                          ((null? p) '()) ; dans le cas où le noeud cherché n'est pas dans l'arbre
+                          ((equal? (cdr p) 'youfoundme) g)
+                          (else (let ((x (get-next-node (car p) key)))
+                                     (cond
+                                           ((null? x) '());dans le cas où le noeud cherché n'est pas dans l'arbre
+                                           
+                                           ((and (equal? (cdr x) 'youfoundme) (equal? (cdr p) 'right))
+                                             (zag g (car p))) 
+
+                                           ((and (equal? (cdr x) 'youfoundme) (equal? (cdr p) 'left))
+                                             (zig g (car p)))
+                                             
+                                           ((and (equal? (cdr x) 'right) (equal? (cdr p) 'right)) 
+                                             (zag-zag g (car p) (node-splay (car x) key)))
+                                             
+                                           ((and (equal? (cdr x) 'left) (equal? (cdr p) 'right))
+                                             (zag-zig g (car p) (node-splay (car x) key)))
+                                             
+                                           ((and (equal? (cdr x) 'right) (equal? (cdr p) 'left))
+                                             (zig-zag g (car p) (node-splay (car x) key)))
+                                             
+                                           ((and (equal? (cdr x) 'left) (equal? (cdr p) 'left))
+                                             (zig-zig g (car p) (node-splay (car x) key)))
+                                             
+                                           (else (display 'wtfomgerreur)))))))))
+ 
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\a)))
+                             
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\a)))
+                     
+                #|
+                ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                (let ((cmp (if (null? g) #f (compare key (node-key g)))))
+        (cond 
+            ((equal? cmp 'right) (let ((p (node-rchild g)))
+                                      (node- )
+            
+            node-rchild actual))
+            ((equal? cmp 'left) (node-lchild actual)) 
+            ((equal? cmp 'youfoundme) g))))) 
+            
+            (else #f))
+                
+                
+                (let* ( (p (get-next-node g key))
+                        (x-left (equal? (node-lchild p) x)))
+                     ;(p-left (equal? (node-lchild g) p))
+                ;then
+                    (if (null? g)
+                        ; si true cas de zig zig
+                        (if x-left
+                            (zig p x)
+                            (zag p x))
+                        (let ((p-left (equal? (node-lchild g) p)))
+                             (if (equal? p-left x-left)
+                                 ; Si true on est dans un cas de zig-zig
+                                 (if x-left 
+                                     (zig-zig g p x)
+                                     (zag-zag g p x))
+                                 ; Si false on est dans un cas de zig-zag
+                                 (begin (display p)(if x-left
+                                     (zig-zag g p x)
+                                     (zig-zag g p x)))))))))    
+;fonction iterative pour les splays zig-zig et zig-zag. On suppose que le sous-arbre qui a g comme noeud a une profondeur de 2*repeat 
+(define node-repeat-splay
+        (lambda (g splay-key repeat)
+                (let* ((p (get-next-node g splay-key))
+                      (x (get-next-node p splay-key)))
+       (begin (display (list repeat g)) (newline) (if (equal? 1 repeat)
+                        (node-splay g p x)
+                        (node-splay g p (node-repeat-splay x splay-key (- 1 repeat)))))))
+                )        
+                        
+; Évalue la profondeur et
+(define node-splay-tree
+        (lambda (root key)
+                (let ((depth (node-depth root key)))
+                    (cond ((equal? depth 1) root)
+                          ((odd? depth) (node-splay '() root (node-splay-tree (get-next-node root key))))
+                          ((even? depth) (node-repeat-splay root key (/ depth  2)))
+                          (else #f)))))      
+ |#                   
 (define node-insert 
         (lambda (root node) 
                  (let ((cmp (if (null? root) #f (compare (node-key node) (node-key root)))))
@@ -115,114 +279,8 @@
         )
 )
 
-(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
-
-; Évalue la profondeur et
-(define node-splay-tree
-        (lambda (root to-splay)
-                (let ((depth (node-depth root (node-key to-splay))))
-                    (cond ((equal? depth 1) to-splay)
-                          ((even? depth) (node-splay '() root (node-splay-tree (get-next-node root to-splay))))
-                          ((odd? depth) (node-splay-repeat root to-splay (/ (- depth 1) 2)))
-                          (else #f)))))
-
-                    
-                    
-(define get-next-node 
-        (lambda (actual final-key)
-                (let ((cmp (if (null? root) #f (compare final-key (node-key actual)))))
-  (cond 
-    ((equal? cmp 'right) (node-rchild root))
-    ((equal? cmp 'left) (node-lchild root)) 
-    (else #f)))))
-;fonction iterative pour les splays zig-zig et zig-zag. On suppose que le sous-arbre qui a g comme noeud a une profondeur de 2*repeat 
-(define node-repeat-splay
-        (lambda (g splay-key repeat)
-                (let ((p (get-next-node g splay-key))
-                      (x (get-next-node p splay-key)))
-                    (if (equal? 1 repeat)
-                        (node-splay g p x)
-                        (node-splay g p (node-repeat-splay x splay-key (- 1 repeat)))))))
-                        
-; g (s'il existe) est le noeud parent de p.
-; p est le noeud parent de x.
-; p et x doivent exister sinon -> plante.
-(define node-splay 
-        (lambda (g p x)
-                ;assign
-                (let ((x-left (equal? (node-lchild p) x)))
-                      ;(p-left (equal? (node-lchild g) p)))
-                ;then
-                    (if (null? g)
-                        ; si true cas de zig zig
-                        (if (x-left)
-                            (zig-left p x)
-                            (zig-right p x))
-                        (let ((p-left (equal? (node-lchild g) p)))
-                             (if (equal? p-left x-left)
-                                 ; Si true on est dans un cas de zig-zig
-                                 (if (x-left) 
-                                     (zig-zig-left g p x)
-                                     (zig-zig-right g p x))
-                                 ; Si false on est dans un cas de zig-zag
-                                 (if (x-left)
-                                     (zig-zag-left g p x)
-                                     (zig-zag-right g p x))))))))
-                    
-                
-;
-;Opération zig. p etait root -> c est root
-; quand x est le left child de p et p est root
-; (((A) X (B)) P (C)) -> ((A) X ((B) P (C)))
-(define zig-left
-    (lambda (p x) 
-            (node-reconstruct x (node-lchild x) (node-reconstruct p (node-rchild x) (node-rchild p)))))
-;Opération zig. p etait root -> c est root
-; quand x est le right child de p et p est root
-; ((C) P ((B) X (A))) -> (((C) P (B)) X (A))
-
-(define zig-right
-    (lambda (p x) 
-            (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x))(node-rchild x) )))
-; x is right child of p is right child of g
-(define zig-zig-right
-        (lambda (g p x)
-            (node-reconstruct x (node-reconstruct p (node-reconstruct g (node-lchild g) 
-                                                                        (node-lchild p)) 
-                                                    (node-lchild x))
-                                (node-rchild x))))   
-
-; x is leftchild of p is leftchild of g
-(define zig-zig-left
-        (lambda (g p x)
-            (node-reconstruct x (node-lchild x) 
-                                (node-reconstruct p (node-rchild x)  
-                                                    (node-reconstruc g (node-rchild p)
-                                                                       (node-rchild g))))))
-                                                                       
-(define (node-depth root key)
-        (if (null? root) 
-             (0)
-             (let ((cmp (compare key (node-key root))))
-                  (cond 
-                        ((equal? cmp 'youfoundme) 1)
-                        ((equal? cmp 'right) (+ 1 (node-depth (node-rchild root) key))
-                        ((equal? cmp 'left) (+ 1 (node-depth (node-lchild root) key)) 
-                         (else #f)))))))                                                                       
-                                                                       
-#|                                
-(define zig-zag-left
-        (lambda (g p x)
-                (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x)))))        
-
-(define zig-zag-right
-        (lambda (g p x)
-                (node-reconstruct x ())))                
-                
-  |#
-
-
-
+;(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
+#|                
 (define (compare2 list1 list2)
 	(if (or (null? list1) (null? list2))
 		'erreur
@@ -257,7 +315,7 @@
 		list2
 	)
 )
-#|
+
 (assert (equal? (compare2 '(a b c) '()) 'erreur))
 (assert (equal? (compare2 '() '(d e f)) 'erreur))
 (assert (equal? (compare2 '() '()) 'erreur))
@@ -349,7 +407,7 @@
 							(cdr expr2));;;ajouter le mot.  REMARQUE: S'il y a plusieurs '= dans expr, c'est bizarre 
 				)
 			)
-			expr;;;recherche du mot expr    
+			(cons '% expr);;;recherche du mot expr    
 		)
 )
 
@@ -365,20 +423,44 @@
 	)
 
 )
-;;;(display (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)))
 (assert (equal? (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 ;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))  
+
+
+;;; test d'assertion emprunté à guillaume
+
+;(assert (equal?
+;'((root-left root-term root-definitions node-left) node-term node-definitions node-right)
+;(zag '(root-left root-term root-definitions (node-left node-term node-definitions node-right)))) "node-zag")
+
+;(assert (equal?
+;'(node-left node-term node-definitions (node-right root-term root-definitions root-right))
+;(zig '((node-left node-term node-definitions node-right) root-term root-definitions root-right))) "node-zig")
+
+;(assert (equal?
+;'(((root-left root-term root-definitions node-left) node-term node-definitions child-left) child-term child-definitions child-right)
+;(zag-zag '(root-left root-term root-definitions (node-left node-term node-definitions (child-left child-term child-definitions child-right))))) "node-zag-zag")
+
+;(assert (equal?
+;'(child-left child-term child-definitions (child-right node-term node-definitions (node-right root-term root-definitions root-right)))
+;(zig-zig '(((child-left child-term child-definitions child-right) node-term node-definitions node-right) root-term root-definitions root-right))) "node-zig-zig")
+
+;(assert (equal?
+;'((root-left root-term root-definitions child-left) child-term child-definitions (child-right node-term node-definitions node-right))
+;(zag-zig '(root-left root-term root-definitions ((child-left child-term child-definitions child-right) node-term node-definitions node-right)))) "zag-zig")
+
+;(assert (equal?
+;'((node-left node-term node-definitions child-left) child-term child-definitions (child-right root-term root-definitions root-right))
+;(zig-zag '((node-left node-term node-definitions (child-left child-term child-definitions child-right)) root-term root-definitions root-right))) "zag-zig")
+
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
-   ;;;(affichage-dict dict)
    ;;;evaluer l'expression
-   ;;;(printligne 1 expr)
-   ;;;(printligne 2 (member #\= expr))
    (if (null? expr) (cons (string->list "entree vide") dict) ;;;l'utilisateur a taper enter
    (let ((result (eval-expr expr)))
-			;;;(display (eval-expr expr))
+			(display result)
             (if (exist (cdr result))
                 (cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
                       (cons (string->list "delete") (node-remove dict (cadr result))));;;appel à node-remove avec (cdr result)?
@@ -390,14 +472,15 @@
                                     (cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def d) '() '())))
                                     (cons (string->list "terme inconnu") dict)))
                             (cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())))));;;ajout normal
-                    (else ;;;result est de la forme (key) et il faut rechercher le mot key
+                    ((equal? (car result) '%) ;;;result est de la forme ('% key) et il faut rechercher le mot key
                     ;;;(display "recherche")
                     ;;;(display (node-find dict result));;;appeler node-find
-                         (cons (let ((n (node-find dict result)))
+                         (cons (let ((n (node-find dict (cdr result))))
                                     (if n 
                                         (node-definition n)
                                         (string->list "terme inconnu")))
-                                 dict)))
+                                 dict))
+                                 (else (cons (string->list "???") dict)))
                 (cons (string->list "entree non-valide") dict))))))
 
    ;;;appliquer le traitement approprié
