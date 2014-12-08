@@ -18,12 +18,9 @@
 ;;; fonctions ne doivent pas faire d'affichage car c'est la fonction
 ;;; "go" qui se charge de cela.
 ;;;----------------------------------------------------------------------------
-(define printligne
-	(lambda (i x)
-	(begin (display i) (display x)) (newline))
-)
 
-(define (exist x) (not (null? x)))
+; retourne #f si x est '() ou #f
+(define (exist x) (not (or (null? x) (not x))))
 
 (define assert (lambda (expr . message)
                  (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
@@ -138,9 +135,7 @@
                 
 (define get-next-node 
         (lambda (actual key)
-                (display (node-key actual))
-                (let ((cmp (if (null? actual) #f (compare key (node-key actual)))))
-  (display cmp)
+                (let ((cmp (if (not (exist actual)) #f (compare key (node-key actual)))))
   (cond 
     ((equal? cmp 'right) (if (exist (node-rchild actual))
                                     (cons (node-rchild actual) 'right)
@@ -159,11 +154,11 @@
                 ;assign
                 (let ((p (get-next-node g key))) ; p est soit 
                      (cond 
-                          ((null? p) '()) ; dans le cas où le noeud cherché n'est pas dans l'arbre
+                          ((not (exist p)) g) ; dans le cas où le noeud cherché n'est pas dans l'arbre
                           ((equal? (cdr p) 'youfoundme) g)
                           (else (let ((x (get-next-node (car p) key)))
                                      (cond
-                                           ((null? x) '());dans le cas où le noeud cherché n'est pas dans l'arbre
+                                           ((not (exist x)) g);dans le cas où le noeud cherché n'est pas dans l'arbre
                                            
                                            ((and (equal? (cdr x) 'youfoundme) (equal? (cdr p) 'right))
                                              (zag g (car p))) 
@@ -187,9 +182,26 @@
  
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
                              '(#\a)))
-                             
+(newline)                     
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
-                             '(#\a)))
+                             '(#\b)))
+(newline)
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\c)))
+(newline)
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\d)))                             
+                             
+(newline)
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\e)))
+(newline)
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\f)))
+(newline)
+(display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
+                             '(#\g)))
+
                      
                 #|
                 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -242,26 +254,29 @@
                           ((odd? depth) (node-splay '() root (node-splay-tree (get-next-node root key))))
                           ((even? depth) (node-repeat-splay root key (/ depth  2)))
                           (else #f)))))      
- |#                   
+ |#
 (define node-insert 
+        (lambda (root node)
+                (node-splay (_node-insert root node) (node-key node))))
+ 
+(define _node-insert 
         (lambda (root node) 
                  (let ((cmp (if (null? root) #f (compare (node-key node) (node-key root)))))
                     (cond 
                         ((equal? cmp 'youfoundme) (node-reconstruct node (node-lchild root) (node-rchild root)))
                         ((equal? cmp 'right) (if (null? (node-rchild root))
                                                  (node-reconstruct root (node-lchild root) node) 
-                                                 (node-reconstruct root (node-lchild root) (node-insert (node-rchild root) node))))
+                                                 (node-reconstruct root (node-lchild root) (_node-insert (node-rchild root) node))))
                         ((equal? cmp 'left)  (if (null? (node-lchild root))
                                                  (node-reconstruct root node (node-rchild root)) 
-                                                 (node-reconstruct root (node-insert (node-lchild root) node) (node-rchild root))))
-                        (else node)))))
+                                                 (node-reconstruct root (_node-insert (node-lchild root) node) (node-rchild root))))
+                        (else node))))) ; ce cas arrive quand la root est nulle
 
 ;;;(display (node-insert '() '(() (a b) (d e f i n i t i o n) ())))
                     
 (define node-remove
         (lambda (root key) 
                  (let ((cmp (if (null? root) #f (compare key (node-key root)))))
-				 (display cmp)
                     (cond 
                         ((equal? cmp 'youfoundme) (if (null? (node-lchild root))
                                                       (node-rchild root)
@@ -326,12 +341,20 @@
 (assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
 |#
  
+ ;;Retourne  l'arbre splayé en fonction du noeud recherché. Retourne faux si l'élément n'est pas dans l'arbre 
 (define (node-find root key)
+    (let ((x (_node-find root key)))
+        (if x 
+           (node-splay root (node-key x))
+           #f)))
+ 
+;cherche et retourne le noeud avec une clé correspondante. retourne #f si le aucun noeud n'a une clé correspondante.
+(define (_node-find root key)
 	(let ((cmp (if (null? root) #f (compare key (node-key root)))))
 		(cond 
 			((equal? cmp 'youfoundme) root )
-			((equal? cmp 'right) (node-find (node-rchild root) key))
-			((equal? cmp 'left) (node-find (node-lchild root) key )) 
+			((equal? cmp 'right) (_node-find (node-rchild root) key))
+			((equal? cmp 'left) (_node-find (node-lchild root) key )) 
 		(else #f) 
 		)
 	)
@@ -349,12 +372,11 @@
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
 	
-;;;(assert (equal? (node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
+;;;(assert (equal? (_node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
 
 ;;;prend une liste de chaines et retourne la concatenation de ces chaines en une seule liste
 ;;;ex: ((a b c) (d e) (f g h i)) => (a b c d e f g h i)
 (define (construire-def lst)
-    (display lst)
 	(foldr
 		(lambda(x y)
 			(append x y)
@@ -370,7 +392,7 @@
             (foldr 
                 (lambda (x y)
                     (if (not (equal? y #f))
-                        (let ((d (node-find dict x)))
+                        (let ((d (_node-find dict x)))
                             (if (and d y) 
                                 (cons (node-definition d) y)
                                 #f))
@@ -392,15 +414,8 @@
 ;;;(eval-expr '(a b c)) => (a b c)
 ;;;(eval-expr '(a b c = d e f)) => (= (a b c) (d e f))
 (define (eval-expr expr)
-		;;;(printligne 1 expr)
-		;;;(assert (member '= expr))
-		;;;(assert (member = expr)) ça fail tout le temps
-        ;;;(printligne 2 expr)
 		(if (member #\= expr) 
 			(let ((expr2 (string-split expr #\=)))
-				;;;(display 3)
-				;;;(display expr2)
-
 				(if (null? (cadr expr2))
 					(cons '- (list (car expr2)));;;retrait du mot expr
 					(append (list '= (car expr2))
@@ -416,14 +431,14 @@
 
 (define (affichage-dict dictio)
 	(begin
+    (newline)
+    (display    'dict:)
 	(display dictio)
 	(newline)
 	dictio
-	
 	)
-
 )
-(assert (equal? (node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
+(assert (equal? (_node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
 ;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
 ;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))  
 
@@ -460,27 +475,31 @@
    ;;;evaluer l'expression
    (if (null? expr) (cons (string->list "entree vide") dict) ;;;l'utilisateur a taper enter
    (let ((result (eval-expr expr)))
-			(display result)
+   
             (if (exist (cdr result))
-                (cond((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
-                      (cons (string->list "delete") (node-remove dict (cadr result))));;;appel à node-remove avec (cdr result)?
-                    ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
+            
+                (cond ((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
+                        (cons (string->list "delete") (node-remove dict (cadr result))));;;appel à node-remove avec (cdr result)?
+                      
+                      ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
                         (if (member #\+ (caddr result))
-                            ;;;(display (construire-def (gerer-concat result dict)));;;(printligne 1 result);;;concaténation
                             (let ((d (make-concatdefinition dict (string-split (caddr result) #\+))))
-                                (if d
-                                    (cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def d) '() '())))
-                                    (cons (string->list "terme inconnu") dict)))
+                                  (if d
+                                      (cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def d) '() '())))
+                                      (cons (string->list "terme inconnu") dict)))
                             (cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())))));;;ajout normal
-                    ((equal? (car result) '%) ;;;result est de la forme ('% key) et il faut rechercher le mot key
-                    ;;;(display "recherche")
-                    ;;;(display (node-find dict result));;;appeler node-find
-                         (cons (let ((n (node-find dict (cdr result))))
-                                    (if n 
-                                        (node-definition n)
-                                        (string->list "terme inconnu")))
-                                 dict))
-                                 (else (cons (string->list "???") dict)))
+                            
+                       ((equal? (car result) '%) ;;;result est de la forme ('% key) et il faut rechercher le mot key
+                        (let ((n (node-find dict (cdr result))))
+                              (display 'patate)
+                              (display n)
+                              (newline)
+                              (if n 
+                                 (cons (node-definition n) n) 
+                                 (cons (string->list "terme inconnu") dict))))
+                                        
+                        (else (cons (string->list "???") dict)))
+                    
                 (cons (string->list "entree non-valide") dict))))))
 
    ;;;appliquer le traitement approprié
