@@ -35,23 +35,22 @@
     (if (null? lst)
          base
 		 (foldl f (f base (car lst)) (cdr lst)))))
-
-(assert (equal? (foldl + 1 '(1 2 3)) 7) "fold-left an addition")
-(assert (equal? (foldl string-append "" '("a" "b" "c")) "abc") "fold-left a string")
-(assert (equal? (foldl string-append "" '()) "") "fold-left an empty list")
-   
          
-;; y'a clairement des endroits ou il va falloir utiliser ca. on la que trop vu souvent en cours    
 (define foldr
   (lambda (f base lst)  
     (if (null? lst)
          base
          (f (car lst)
             (foldr f base (cdr lst))))))
-
+#|            
+(assert (equal? (foldl + 1 '(1 2 3)) 7) "fold-left an addition")
+(assert (equal? (foldl string-append "" '("a" "b" "c")) "abc") "fold-left a string")
+(assert (equal? (foldl string-append "" '()) "") "fold-left an empty list")
+   
 (assert (equal? (foldr + 1 '(1 2 3)) 7) "foldr testing" )
 (assert (equal? (foldr string-append "" '("a" "b" "c")) "cba") "foldr testing wierd")
 (assert (equal? (foldr string-append "" '()) "") "foldr testing")
+|#
 
 ;Calcule à partir de la root la profondeur jusqu'au noeud avec la clée cherchée                                                                       
 (define (node-depth root key)
@@ -84,11 +83,12 @@
 (define (node-create key definition lchild rchild) (list lchild key definition rchild))
 (define (node-reconstruct x lchild rchild) (list lchild (node-key x) (node-definition x) rchild))
 
+#|
 (assert (equal? '() (node-lchild '(() "term" ("def1" "def2") ()))) "get the left child of a node")
 (assert (equal? "term" (node-key '(() "term" ("def1" "def2") ()))) "get the term of a node")
 (assert (equal? '("def1" "def2") (node-definition '(() "term" ("def1" "def2") ()))) "get the definitions of a node")
 (assert (equal? '() (node-rchild '(() "term" ("def1" "def2") ()))) "get the right child of a node")
-
+|#
 ;
 ;Opération zig. p etait root -> c est root
 ; quand x est le left child de p et p est root
@@ -99,8 +99,6 @@
 ;Opération zig. p etait root -> c est root
 ; quand x est le right child de p et p est root
 ; ((C) P ((B) X (A))) -> (((C) P (B)) X (A))
-
-
 
 (define zag
     (lambda (p x) 
@@ -128,7 +126,6 @@
         (lambda (g p x)
                 (node-reconstruct x (node-reconstruct p (node-lchild p) (node-lchild x)) (node-reconstruct g (node-rchild x)(node-rchild g) ))))        
 
-;pas encore fait                
 (define zag-zig
         (lambda (g p x)
                 (node-reconstruct x (node-reconstruct g (node-lchild g) (node-lchild x)) (node-reconstruct p (node-rchild x)(node-rchild p) ))))
@@ -145,10 +142,9 @@
                                    #f))
     ((equal? cmp 'youfoundme) (cons actual 'youfoundme))
     (else #f))))) 
-; key est la clée recherchée
-; g (s'il existe) est le noeud parent de p.
-; p (s'il existe) est une paire avec le noeud apres g dans la recheche de la clée dans l'arbre
-; x (s'il existe) est une paire avec le noeud apres p dans la recheche de la clée dans l'arbre
+    
+; key est la clée recherchée du noeud a splayer
+; g est la racine de l'arbre à splayer
 (define node-splay 
         (lambda (g key)
                 ;assign
@@ -179,7 +175,7 @@
                                              (zig-zig g (car p) (node-splay (car x) key)))
                                              
                                            (else (display 'wtfomgerreur)))))))))
- 
+ #|
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
                              '(#\a)))
 (newline)                     
@@ -201,60 +197,7 @@
 (newline)
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
                              '(#\g)))
-
-                     
-                #|
-                ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                (let ((cmp (if (null? g) #f (compare key (node-key g)))))
-        (cond 
-            ((equal? cmp 'right) (let ((p (node-rchild g)))
-                                      (node- )
-            
-            node-rchild actual))
-            ((equal? cmp 'left) (node-lchild actual)) 
-            ((equal? cmp 'youfoundme) g))))) 
-            
-            (else #f))
-                
-                
-                (let* ( (p (get-next-node g key))
-                        (x-left (equal? (node-lchild p) x)))
-                     ;(p-left (equal? (node-lchild g) p))
-                ;then
-                    (if (null? g)
-                        ; si true cas de zig zig
-                        (if x-left
-                            (zig p x)
-                            (zag p x))
-                        (let ((p-left (equal? (node-lchild g) p)))
-                             (if (equal? p-left x-left)
-                                 ; Si true on est dans un cas de zig-zig
-                                 (if x-left 
-                                     (zig-zig g p x)
-                                     (zag-zag g p x))
-                                 ; Si false on est dans un cas de zig-zag
-                                 (begin (display p)(if x-left
-                                     (zig-zag g p x)
-                                     (zig-zag g p x)))))))))    
-;fonction iterative pour les splays zig-zig et zig-zag. On suppose que le sous-arbre qui a g comme noeud a une profondeur de 2*repeat 
-(define node-repeat-splay
-        (lambda (g splay-key repeat)
-                (let* ((p (get-next-node g splay-key))
-                      (x (get-next-node p splay-key)))
-       (begin (display (list repeat g)) (newline) (if (equal? 1 repeat)
-                        (node-splay g p x)
-                        (node-splay g p (node-repeat-splay x splay-key (- 1 repeat)))))))
-                )        
-                        
-; Évalue la profondeur et
-(define node-splay-tree
-        (lambda (root key)
-                (let ((depth (node-depth root key)))
-                    (cond ((equal? depth 1) root)
-                          ((odd? depth) (node-splay '() root (node-splay-tree (get-next-node root key))))
-                          ((even? depth) (node-repeat-splay root key (/ depth  2)))
-                          (else #f)))))      
- |#
+|#
 (define node-insert 
         (lambda (root node)
                 (node-splay (_node-insert root node) (node-key node))))
@@ -293,53 +236,6 @@
                         (else '())))
         )
 )
-
-;(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
-#|                
-(define (compare2 list1 list2)
-	(if (or (null? list1) (null? list2))
-		'erreur
-		(let ((comp (compare3 (symbol->string list1) (symbol->string list2))))
-			(cond ((null? comp) 'youfoundme)
-				((equal? comp 'left) 'left)
-				((equal? comp 'right) 'right)
-				(else 'right;;; compare ('(a b c) '(a b c d e f)) => right		  
-				)
-			)
-		)
-	)
-)
-
-(define (compare3 list1 list2)
-	(foldl
-		(lambda (lst symb)
-			(cond ((null? lst) 'left);;; compare ('(a b c d e) '(a b)) => left	
-				  ((equal? lst 'left) 'left)
-				  ((equal? lst 'right) 'right)
-				  (else (let ((str1 (car lst))(str2 symb))
-							(cond ((string<? str1 str2) 'left)
-								  ((string>? str1 str2) 'right)
-								  ((string=? str1 str2) (cdr lst))
-							
-							)
-						)
-				  )
-			)
-		)
-		list1
-		list2
-	)
-)
-
-(assert (equal? (compare2 '(a b c) '()) 'erreur))
-(assert (equal? (compare2 '() '(d e f)) 'erreur))
-(assert (equal? (compare2 '() '()) 'erreur))
-(assert (equal? (compare2 '(a b c) '(a b)) 'right))
-(assert (equal? (compare2 '(c a d r e) '(c a d r e r)) 'left))
-(assert (equal? (compare2 '(q w e r t y) '(q w e r t y)) 'youfoundme))
-(assert (equal? (compare2 '(q w e r t = y) '(q w e r t = y)) 'youfoundme))
-(assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
-|#
  
  ;;Retourne  l'arbre splayé en fonction du noeud recherché. Retourne faux si l'élément n'est pas dans l'arbre 
 (define (node-find root key)
@@ -359,6 +255,8 @@
 		)
 	)
 )
+;;;(assert (equal? (_node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
+;;;(assert (equal? (_node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
 
 ;;; Prend en input une liste de caractère, retourne une liste de liste de caractère séparé au niveau du char demandé
 ;;; ex. (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s)) => ((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))
@@ -371,8 +269,15 @@
                 (cons '() y)
                 (cons (cons x (car y)) (cdr y))))
     '(()) str)))
-	
-;;;(assert (equal? (_node-find '((() (a) (b r a v o) ()   ) (b) (b) ()) '(a)) '(() (a) (b r a v o) ())))
+
+#|	
+(assert (equal? (string-split (caddr (eval-expr '(a b c #\= d e + f g + h i))) '+) '((d e) (f g) (h i))))
+(assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s) '+) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))) "string-split")
+(assert (equal? (string-split '(a p p l e p i e) +) '((a p p l e p i e))) "split without token in list");;;si dans la liste à splitter il n'y a aucune occurence du séparateur, 
+																		  ;;;on retourne la liste de la liste initiale (1 niveau d'encapsulation)
+(assert (equal? (string-split '(1 2 3) 2) '((1) (3))) "regular split")
+(assert (equal? (string-split '() 2) '()) "splitting an empty list") 
+|#
 
 ;;;prend une liste de chaines et retourne la concatenation de ces chaines en une seule liste
 ;;;ex: ((a b c) (d e) (f g h i)) => (a b c d e f g h i)
@@ -399,20 +304,11 @@
                         #f))
                 '() lst))
 
+#|
 (assert (equal? (make-concatdefinition '(()(#\a #\b #\c)(#\p #\a #\t #\a #\t #\e)(() (#\d #\e #\f) (#\p #\o #\i #\l) ())) '((#\a #\b #\c) (#\d #\e #\f)) ) '((#\p #\a #\t #\a #\t #\e) (#\p #\o #\i #\l))) "test de concatenation de definition")		
 (assert(equal? (make-concatdefinition '(() (#\a #\b) (#\z #\z #\z) ()) '((#\a #\b))) '((#\z #\z #\z))) "test de make-concatdefinition")
 (assert (equal? (make-concatdefinition '(() (#\b) (#\b #\b #\b) (() (#\c) (#\c #\c #\c) ())) '((#\b) (#\c))) '((#\b #\b #\b) (#\c #\c #\c))) "test de make-concatdefinition")
-(assert (equal? (string-split '(a p p l e + p i e + a r e + f u c k i n g + d e l i c i o u s) '+) '((a p p l e) (p i e) (a r e) (f u c k i n g) ( d e l i c i o u s))) "string-split")
-(assert (equal? (string-split '(a p p l e p i e) +) '((a p p l e p i e))) "split without token in list");;;si dans la liste à splitter il n'y a aucune occurence du séparateur, 
-																		  ;;;on retourne la liste de la liste initiale (1 niveau d'encapsulation)
-(assert (equal? (string-split '(1 2 3) 2) '((1) (3))) "regular split")
-(assert (equal? (string-split '() 2) '()) "splitting an empty list") 
-;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
-
-;; TESTÉ
-;;;(eval-expr '(a b c =)) => (- (a b c))
-;;;(eval-expr '(a b c)) => (a b c)
-;;;(eval-expr '(a b c = d e f)) => (= (a b c) (d e f))
+|#
 (define (eval-expr expr)
 		(if (member #\= expr) 
 			(let ((expr2 (string-split expr #\=)))
@@ -426,9 +322,15 @@
 		)
 )
 
+#|
 (assert (equal? (eval-expr '(a b c #\= d e + f g + h i)) '(= (a b c) (d e + f g + h i))))
-(assert (equal? (string-split (caddr (eval-expr '(a b c #\= d e + f g + h i))) '+) '((d e) (f g) (h i))))
-
+(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
+(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))  
+(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
+;; TESTÉ
+;;;(eval-expr '(a b c =)) => (- (a b c))
+;;;(eval-expr '(a b c)) => (a b c)
+;;;(eval-expr '(a b c = d e f)) => (= (a b c) (d e f))
 (define (affichage-dict dictio)
 	(begin
     (newline)
@@ -438,37 +340,7 @@
 	dictio
 	)
 )
-(assert (equal? (_node-find '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ()) '(#\a)) '(() (#\a) (#\d #\e #\f #\i #\n #\i #\t #\i #\o #\n) ())))
-;;;(assert (equal? (eval-expr '(q w e 1 2 3 )) '(q w e 1 2 3)))
-;;;(assert (equal? (eval-expr '(a b c = d e f)) '(= (a b c) (d e f))))  
-
-
-;;; test d'assertion emprunté à guillaume
-
-;(assert (equal?
-;'((root-left root-term root-definitions node-left) node-term node-definitions node-right)
-;(zag '(root-left root-term root-definitions (node-left node-term node-definitions node-right)))) "node-zag")
-
-;(assert (equal?
-;'(node-left node-term node-definitions (node-right root-term root-definitions root-right))
-;(zig '((node-left node-term node-definitions node-right) root-term root-definitions root-right))) "node-zig")
-
-;(assert (equal?
-;'(((root-left root-term root-definitions node-left) node-term node-definitions child-left) child-term child-definitions child-right)
-;(zag-zag '(root-left root-term root-definitions (node-left node-term node-definitions (child-left child-term child-definitions child-right))))) "node-zag-zag")
-
-;(assert (equal?
-;'(child-left child-term child-definitions (child-right node-term node-definitions (node-right root-term root-definitions root-right)))
-;(zig-zig '(((child-left child-term child-definitions child-right) node-term node-definitions node-right) root-term root-definitions root-right))) "node-zig-zig")
-
-;(assert (equal?
-;'((root-left root-term root-definitions child-left) child-term child-definitions (child-right node-term node-definitions node-right))
-;(zag-zig '(root-left root-term root-definitions ((child-left child-term child-definitions child-right) node-term node-definitions node-right)))) "zag-zig")
-
-;(assert (equal?
-;'((node-left node-term node-definitions child-left) child-term child-definitions (child-right root-term root-definitions root-right))
-;(zig-zag '((node-left node-term node-definitions (child-left child-term child-definitions child-right)) root-term root-definitions root-right))) "zag-zig")
-
+|#
 ;;;----------------------------------------------------------------------------
 (define traiter
   (lambda (expr dict)
@@ -502,25 +374,11 @@
                     
                 (cons (string->list "entree non-valide") dict))))))
 
-   ;;;appliquer le traitement approprié
-  #|
-  ;;;sortir la réponse appropriée
-   (cons (append (string->list "*** le programme est ")
-                  '(#\I #\N #\C #\O #\M #\P #\L #\E #\T #\! #\newline)
-                  (string->list "*** la requete lue est: ")
-                  expr
-                  (string->list "\n*** nombre de caractères: ")
-                  (string->list (number->string (length expr)))
-                  '(#\newline))
-          dict)|#
-
-
 ;;;----------------------------------------------------------------------------
 ;;; Ne pas modifier cette section.
 
 (define go
   (lambda (dict)
-	(affichage-dict dict)
     (print "? ")
     (let ((ligne (read-line)))
       (if (string? ligne)
