@@ -180,6 +180,7 @@
                                              
                                            (else (display 'wtfomgerreur)))))))))
  
+ 
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
                              '(#\a)))
 (newline)                     
@@ -293,53 +294,6 @@
                         (else '())))
         )
 )
-
-;(display (node-remove '(() (#\a) (#\d #\e #\f) ()) '(#\a)))
-#|                
-(define (compare2 list1 list2)
-	(if (or (null? list1) (null? list2))
-		'erreur
-		(let ((comp (compare3 (symbol->string list1) (symbol->string list2))))
-			(cond ((null? comp) 'youfoundme)
-				((equal? comp 'left) 'left)
-				((equal? comp 'right) 'right)
-				(else 'right;;; compare ('(a b c) '(a b c d e f)) => right		  
-				)
-			)
-		)
-	)
-)
-
-(define (compare3 list1 list2)
-	(foldl
-		(lambda (lst symb)
-			(cond ((null? lst) 'left);;; compare ('(a b c d e) '(a b)) => left	
-				  ((equal? lst 'left) 'left)
-				  ((equal? lst 'right) 'right)
-				  (else (let ((str1 (car lst))(str2 symb))
-							(cond ((string<? str1 str2) 'left)
-								  ((string>? str1 str2) 'right)
-								  ((string=? str1 str2) (cdr lst))
-							
-							)
-						)
-				  )
-			)
-		)
-		list1
-		list2
-	)
-)
-
-(assert (equal? (compare2 '(a b c) '()) 'erreur))
-(assert (equal? (compare2 '() '(d e f)) 'erreur))
-(assert (equal? (compare2 '() '()) 'erreur))
-(assert (equal? (compare2 '(a b c) '(a b)) 'right))
-(assert (equal? (compare2 '(c a d r e) '(c a d r e r)) 'left))
-(assert (equal? (compare2 '(q w e r t y) '(q w e r t y)) 'youfoundme))
-(assert (equal? (compare2 '(q w e r t = y) '(q w e r t = y)) 'youfoundme))
-(assert (equal? (compare2 '(= + +) '(= + +)) 'youfoundme))
-|#
  
  ;;Retourne  l'arbre splayé en fonction du noeud recherché. Retourne faux si l'élément n'est pas dans l'arbre 
 (define (node-find root key)

@@ -55,12 +55,7 @@
 \author{?mile la magnifique}
 
 \begin{document}
-	\maketitle
-	%Je n'ai aucunement parler du splay, je sais pas trop quoi en dire ni où en parler
-	%Dans la dernière partie il faut comparer le nombre de lignes de code des 2 tps, mais je n'ai pas le tp1 avec moi
-	%En gros, je suis confiant que j'ai écrit du stock pertinent dans le rapport, sauf pour la 3e section. Vu que c'est toi qui a vraiment bien compris %les 2 tps dans leurs ensembles, peux-tu y jeter un coup d'oeil stp? En particulier, rajouter des exemples de code serait un atout majeur
-	%Aussi, je n'ai pas été capable de parler des fonctions itératives de notre programme
-	
+	\maketitle	
 	
 	\section{1. Fonctionnement général du programme}
 		La fonction traiter de notre programme a le comportement typique d'une fonction main(). La compréhension de cette méthode
@@ -78,6 +73,7 @@
 		au dictionnaire, on transforme la définition de sorte qu'elle soit, même s'il sagit d'une concaténation, une liste de caractères.
 		Nous avons qu'à ajouter un nouveau noeud à l'arbre par la suite. Dans le dernier cas ou l'usage demande de rechercher un mot,
 		celui-ci est recherché par une autre fonction de manière récursive dans l'arbre binaire qui représente notre dictionnaire.
+			Pour ce qui est du splay, la fonction node-splay prend en entrée la racine de l'arbre et la clé correspondante au noeud à mettre à la position de la racine. Cette fonction est appelée après chaque insertion et chaque recherche.
 			Par souci de simplicité et pour garder un niveau d’abstraction assez élevé dans cette brève explication du programme,
 		nous avons omis plusieurs détails, comme le traitement des erreurs et la conservation des données. Il va sans dire qu’ils sont
 		néanmoins pris en charge dans le programme, comme nous l’expliquerons dans les prochains paragraphes.		
@@ -160,7 +156,8 @@
 									(cons '() y)
 									(cons (cons x (car y)) (cdr y))))
 							'(()) str)))
-				
+				On peut voir que notre programme C a été écrit en environ 350 lignes contre environ 400 pour notre programme Scheme. En considérant qu'en C, nous n'avions pas implanté les concaténations et qu'en Scheme, nous avons ajouté beaucoup de test d'assertion (60 lignes) et nous avons implémenté le splay (90 lignes avec les commentaires), on conclut que Scheme est un langage plus concit et avec l'avantage indéniable d'avoir une gestion de mémoire automatisée (difficulté majeure dans le tp1).
+				Parlons maintenant un peu des fonctions itératives de notre programme. La fonction principale qui s'occupe du splay n'est malheureusement pas itératives. Elle s'appelle récursivement, mais ses appels récursifs ne sont pas en position terminal. En fait, la majorité, sinon l'entièreté de nos fonctions récursives ne sont pas sous formes itératives, parce que ce n'est pas naturel de programmer ainsi et que le programme très bien sans faire cet effort. Toutefois, nous utilisons très souvent des foldr et des foldl dans nos fonctions (non-récursives), et ceux-ci sont sous formes itératives. Tout n'est pas noir!
 				En bout de compte, nul n'est meilleur que l'autre, mais chaque type de programmation a clairement des avantages et des inconvénients.
 		
 		
