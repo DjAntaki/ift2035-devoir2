@@ -22,6 +22,7 @@
 ; retourne #f si x est '() ou #f
 (define (exist x) (not (or (null? x) (not x))))
 
+;fonction d'assertion gentillement prêtée par Guillaume P. Morency
 (define assert (lambda (expr . message)
                  (let ((color (if expr "\x1b[32m" "\x1b[31m")) (reset "\x1b[0m"))
                      (display color)
@@ -50,7 +51,7 @@
 (assert (equal? (foldr + 1 '(1 2 3)) 7) "foldr testing" )
 (assert (equal? (foldr string-append "" '("a" "b" "c")) "cba") "foldr testing wierd")
 (assert (equal? (foldr string-append "" '()) "") "foldr testing")
-|#
+
 
 ;Calcule à partir de la root la profondeur jusqu'au noeud avec la clée cherchée                                                                       
 (define (node-depth root key)
@@ -62,7 +63,7 @@
                         ((equal? cmp 'right) (+ 1 (node-depth (node-rchild root) key)))
                         ((equal? cmp 'left) (+ 1 (node-depth (node-lchild root) key))) 
                         (else #f)))))                                                                       
-                                                                       
+|#                                                                       
 
 
 ; Pour utilisation consquente dans le programme, appeler avec str1=clé recherchée et str2 noeud actuel
@@ -345,34 +346,31 @@
 (define traiter
   (lambda (expr dict)
    ;;;evaluer l'expression
-   (if (null? expr) (cons (string->list "entree vide") dict) ;;;l'utilisateur a taper enter
+   (if (null? expr) (cons (string->list "entree vide\n") dict) ;;;l'utilisateur a taper enter
    (let ((result (eval-expr expr)))
    
             (if (exist (cdr result))
             
                 (cond ((equal? (car result) '-);;;result est de la forme ('- key) et il faut remove le mot key
-                        (cons (string->list "delete") (node-remove dict (cadr result))));;;appel à node-remove avec (cdr result)?
+                        (cons (string->list "") (node-remove dict (cadr result))));;;appel à node-remove avec (cdr result)?
                       
                       ((equal? (car result) '=);;;result est de la forme ('= key definition) et il faut ajouter le mot key
                         (if (member #\+ (caddr result))
                             (let ((d (make-concatdefinition dict (string-split (caddr result) #\+))))
                                   (if d
-                                      (cons (string->list "insertion-concatenation") (node-insert dict (node-create (cadr result) (construire-def d) '() '())))
-                                      (cons (string->list "terme inconnu") dict)))
-                            (cons (string->list "insertion") (node-insert dict (node-create (cadr result) (caddr result) '() '())))));;;ajout normal
+                                      (cons (string->list "") (node-insert dict (node-create (cadr result) (construire-def d) '() '())))
+                                      (cons (string->list "terme inconnu\n") dict)))
+                            (cons (string->list "") (node-insert dict (node-create (cadr result) (caddr result) '() '())))));;;ajout normal
                             
                        ((equal? (car result) '%) ;;;result est de la forme ('% key) et il faut rechercher le mot key
                         (let ((n (node-find dict (cdr result))))
-                              (display 'patate)
-                              (display n)
-                              (newline)
                               (if n 
-                                 (cons (node-definition n) n) 
-                                 (cons (string->list "terme inconnu") dict))))
+                                 (cons (append (node-definition n) (list #\newline)) n) 
+                                 (cons (string->list "terme inconnu\n") dict))))
                                         
-                        (else (cons (string->list "???") dict)))
+                        (else (cons (string->list "???\n") dict)))
                     
-                (cons (string->list "entree non-valide") dict))))))
+                (cons (string->list "entree non-valide\n") dict))))))
 
 ;;;----------------------------------------------------------------------------
 ;;; Ne pas modifier cette section.
