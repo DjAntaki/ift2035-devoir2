@@ -346,8 +346,8 @@
 (define traiter
   (lambda (expr dict)
    ;;;evaluer l'expression
-   (if (null? expr) (cons (string->list "entree vide\n") dict) ;;;l'utilisateur a taper enter
-   (let ((result (eval-expr expr)))
+   (if (null? expr) (cons (string->list "entree vide\n") dict) ;;;l'utilisateur a taper enter et rien d'autre.
+        (let ((result (eval-expr expr)))
    
             (if (exist (cdr result))
             
