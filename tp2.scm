@@ -176,7 +176,7 @@
                                              (zig-zig g (car p) (node-splay (car x) key)))
                                              
                                            (else (display 'wtfomgerreur)))))))))
- #|
+#|
 (display (node-splay '(((() (#\a) (#\a #\a) ()) (#\b) (#\b #\b) (() (#\c) (#\c #\c) ())) (#\d) (#\d #\d) ((() (#\e) (#\e #\e) ()) (#\f) (#\f #\f) (() (#\g) (#\g #\g) ()))) 
                              '(#\a)))
 (newline)                     
